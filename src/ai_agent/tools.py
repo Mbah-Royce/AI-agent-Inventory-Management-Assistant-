@@ -72,7 +72,7 @@ def change_asset_status(asset_status: str, asset_id: str) -> dict|str:
                     # update idempotency with info, concurrent update occurred
                     # update_idempotency(conn=conn, result=result, idempotency_key=idempotency_key)
 
-                    return result
+                    return f'{json.dumps(result)}'
 
                 # successful update
                 result = {
@@ -87,13 +87,14 @@ def change_asset_status(asset_status: str, asset_id: str) -> dict|str:
                 return f'response {json.dumps(result)}'
                 
             else:
-                return f' response {json.dumps({
+                data = {
                     "success": True,
                     "error": "ASSET_NOT_FOUND",
                     "current_state": (
                         None
                     ),
-                })}'
+                }
+                return f'response {json.dumps(data)}'
     except Exception as e:
         return f'Error:{e}'
 

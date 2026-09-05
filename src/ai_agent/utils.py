@@ -120,9 +120,10 @@ class DeterministicStubLLM(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-
+        last_message = messages[-1]
         print("\n--- STUB RECEIVED ---")
-
+        print("TYPE:", last_message.type)
+        print("CONTENT:", last_message.content)
         prompt = str(messages[-1].content).lower()
 
         # Get user text
@@ -132,7 +133,18 @@ class DeterministicStubLLM(BaseChatModel):
         # ).lower()
 
         # Deterministic decision
-        if "change" in prompt and "status" in prompt:
+        if messages[-1].type == "tool":
+            # Give final answer after tool execution
+            response = AIMessage(
+            content=f"Tool result: {last_message.content}"
+        )
+
+            return ChatResult(
+                generations=[
+                    ChatGeneration(message=response)
+                ]
+            )
+        elif "change" in prompt and "status" in prompt:
 
             response = AIMessage(
                 content="yes",
@@ -144,11 +156,11 @@ class DeterministicStubLLM(BaseChatModel):
                             "asset_status": "Broken",
                         },
                         "id": "stub-change-status-eq10",
-                        "type": "tool call",
+                        "type": "tool_call",
                     }
                 ],
             )
-        if "change " in prompt and "location" in prompt:
+        elif "change " in prompt and "location" in prompt:
 
             response = AIMessage(
                 content="",
@@ -164,7 +176,7 @@ class DeterministicStubLLM(BaseChatModel):
                     }
                 ],
             )
-        if "log" in prompt and "fault" in prompt:
+        elif "log" in prompt and "fault" in prompt:
 
             response = AIMessage(
                 content="",
@@ -179,7 +191,7 @@ class DeterministicStubLLM(BaseChatModel):
                     }
                 ],
             )
-        if "get" in prompt and "asset" in prompt:
+        elif "get" in prompt and "asset" in prompt:
 
             response = AIMessage(
                 content="",
@@ -190,6 +202,7 @@ class DeterministicStubLLM(BaseChatModel):
                             "asset_id": "EQ10",
                         },
                         "id": "stub-get-asset-Eq10",
+                        "type": "tool_call"
                     }
                 ],
             )
@@ -229,8 +242,10 @@ def get_llm():
 # ================================
 # AGENT SETUP
 # ================================
+tools = [change_asset_status, change_asset_location, log_asset_fault, get_asset_fault_history, get_asset]
+
 def agent_create(system_prompt, model=get_llm()):
-    tools = [change_asset_status, change_asset_location, log_asset_fault, get_asset_fault_history, get_asset]
+    # tools = [change_asset_status, change_asset_location, log_asset_fault, get_asset_fault_history, get_asset]
 
     agent_chain = create_agent(
         model=model,

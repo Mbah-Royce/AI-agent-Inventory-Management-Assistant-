@@ -1,4 +1,4 @@
-from ai_agent.tools import get_asset, update_asset_status
+from ai_agent.tools import get_asset, change_asset_status
 from unittest.mock import patch
 
 def test_get_asset_by_id(db):
@@ -14,13 +14,35 @@ def test_get_asset_by_id(db):
 def test_change_asset_status(db):
 
     with patch("ai_agent.tools.db_conn", return_value=db):
-        result = update_asset_status.invoke({
+        result = change_asset_status.invoke({
             "asset_id":'VE11',
             "asset_status": 'Obliterated'
         })
 
         assert result.startswith("response ")
-        assert '"new_version": "VE11"' in result
+        assert '"new_version": 2' in result
+        assert '"new_status": "Obliterated"' in result
 
+def test_change_asset_status_old_version(db, monkeypatch):
+    monkeypatch.setattr(
+        "ai_agent.tools.get_asset_data",
+        lambda conn, asset_id :{"version":100},
+    )
+    with patch("ai_agent.tools.db_conn", return_value=db):
+        result = change_asset_status.invoke({
+            "asset_id":'VE11',
+            "asset_status": 'Obliterated'
+        })
 
+        assert '"error": "CONCURRENT_UPDATE"' in result
+
+def test_change_asset_status_asset_not_found(db, monkeypatch):
+
+    with patch("ai_agent.tools.db_conn", return_value=db):
+        result = change_asset_status.invoke({
+            "asset_id":'VE111',
+            "asset_status": 'Obliterated'
+        })
+
+        assert '"error": "ASSET_NOT_FOUND"' in result
     

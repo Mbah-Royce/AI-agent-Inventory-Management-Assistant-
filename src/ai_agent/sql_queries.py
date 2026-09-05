@@ -14,9 +14,9 @@ get_asset_by_id = """
 """
 
 @contextmanager
-def db_conn():
+def db_conn(path='db/inventory.db'):
     load_dotenv()
-    conn = sqlite3.connect('db/inventory.db')
+    conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
         yield conn

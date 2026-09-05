@@ -11,3 +11,6 @@ wheels/
 .env
 db/sqlite3.exe
 
+# Test DB
+tests/test.db
+db/inventory.db
