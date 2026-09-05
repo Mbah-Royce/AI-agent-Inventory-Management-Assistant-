@@ -57,16 +57,11 @@ def change_asset_status(asset_status: str, asset_id: str) -> dict|str:
                 # Detect conflict
                 # -------------
                 if rowcount == 0:
-                    current = conn.execute(
-                        get_asset_by_id, (asset_id,),
-                    ).fetchone()
 
                     result = {
                         "success": False,
                         "error": "CONCURRENT_UPDATE",
-                        "current_state": (
-                            dict(current) if current else None
-                        ),
+                        "current_state": asset,
                     }
 
                     # update idempotency with info, concurrent update occurred
@@ -87,14 +82,14 @@ def change_asset_status(asset_status: str, asset_id: str) -> dict|str:
                 return f'response {json.dumps(result)}'
                 
             else:
-                data = {
+                response = {
                     "success": True,
                     "error": "ASSET_NOT_FOUND",
                     "current_state": (
                         None
                     ),
                 }
-                return f'response {json.dumps(data)}'
+                return f'response {json.dumps(response)}'
     except Exception as e:
         return f'Error:{e}'
 
@@ -102,22 +97,50 @@ def change_asset_status(asset_status: str, asset_id: str) -> dict|str:
 @tool(args_schema=UpdateAssetLocation, description='g')
 def change_asset_location(asset_location: str, asset_id: str) -> dict:
     try:
-        # Created once for the logical operation
-        idempotency_key = str(uuid.uuid4())
 
-        asset = get_asset_data(asset_id)
-        if asset:
-            version = asset['version']
-            return update_asset_location(asset_id=asset_id, location=asset_location, current_version=version,
-                                         idempotency_key=idempotency_key)
-        else:
-            return {
-                "success": True,
-                "error": "ASSET_NOT_FOUND",
-                "current_state": (
-                    None
-                ),
-            }
+        with db_conn() as conn:
+            # Created once for the logical operation
+            idempotency_key = str(uuid.uuid4())
+
+            asset = get_asset_data(conn, asset_id)
+            if asset:
+                version = asset['version']
+                rowcount = update_asset_location(conn,asset_id=asset_id, location=asset_location, current_version=version)
+
+                # ------------
+                # Detect conflict
+                # -------------
+                if rowcount == 0:
+                    result = {
+                        "success": False,
+                        "error": "CONCURRENT_UPDATE",
+                        "current_state": asset,
+                    }
+
+                    # update idempotency with info, concurrent update occurred
+                    # update_idempotency(conn=conn, result=result, idempotency_key=idempotency_key)
+
+                    return f'{json.dumps(result)}'
+                
+                # successful update
+                result = {
+                    "success": True,
+                    "asset_id": asset_id,
+                    "new_location": asset_location,
+                    "new_version": version + 1,
+                }
+
+                return f'response {json.dumps(result)}'
+
+            else:
+                response = {
+                    "success": True,
+                    "error": "ASSET_NOT_FOUND",
+                    "current_state": (
+                        None
+                    ),
+                }
+            return f'response {json.dumps(response)}'
 
     except Exception as e:
         return f'Error:{e}'
@@ -125,25 +148,32 @@ def change_asset_location(asset_location: str, asset_id: str) -> dict:
 
 
 @tool(args_schema=LogAssetFault, description='create fault log for an asset')
-def log_asset_fault(asset_fault: str, asset_id: str) -> str:
+def write_asset_fault_log(asset_fault: str, asset_id: str) -> str:
     try:
-        # Created once for the logical operation
-        idempotency_key = str(uuid.uuid4())
 
-        asset = get_asset_data(asset_id)
-        if asset:
-            results = log_asset_fault(asset_id=asset_id, fault=asset_fault,
-                                   idempotency_key=idempotency_key)
-            return f"Responce {results}"
-        else:
-            results = {
-                "success": True,
-                "error": "ASSET_NOT_FOUND",
-                "current_state": (
-                    None
-                ),
-            }
-            return f"Response {results}"
+        with db_conn() as conn:
+            # Created once for the logical operation
+            idempotency_key = str(uuid.uuid4())
+
+            asset = get_asset_data(conn, asset_id)
+            if asset:
+                results = log_asset_fault(conn, asset_id=asset_id, fault=asset_fault)
+                if results == 1:
+                    response = {
+                        "success": True,
+                        "asset_id": asset_id,
+                        "fault": asset_fault,    
+                    }
+                    return f'response {json.dumps(response)}'
+            else:
+                response = {
+                    "success": True,
+                    "error": "ASSET_NOT_FOUND",
+                    "current_state": (
+                        None
+                    ),
+                }
+                return f"response {response}"
 
     except Exception as e:
         return f"Error: {e}"

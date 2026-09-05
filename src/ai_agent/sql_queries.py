@@ -128,7 +128,7 @@ def log_asset_fault(conn, asset_id: str, fault: str):
 
     try:
 
-        conn.execute('''
+        cursor = conn.execute('''
                 INSERT INTO asset_fault_logs(
                     fault,
                     asset_id
@@ -139,7 +139,6 @@ def log_asset_fault(conn, asset_id: str, fault: str):
             asset_id
         )
         )
-
         conn.commit()
         return 1
 

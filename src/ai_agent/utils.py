@@ -12,7 +12,7 @@ from langchain.agents import create_agent
 from langchain_core.language_models.llms import LLM
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from typing import Any, List, Optional, Sequence
-from .tools import (change_asset_location, change_asset_status, log_asset_fault, get_asset_fault_history, get_asset
+from .tools import (change_asset_location, change_asset_status, write_asset_fault_log, get_asset_fault_history, get_asset
                    ,get_asset_info_with_logs)
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
@@ -153,7 +153,7 @@ class DeterministicStubLLM(BaseChatModel):
                         "name": "change_asset_status",
                         "args": {
                             "asset_id": "EQ10",
-                            "asset_status": "Broken",
+                            "asset_status": "Inactive",
                         },
                         "id": "stub-change-status-eq10",
                         "type": "tool_call",
@@ -172,7 +172,7 @@ class DeterministicStubLLM(BaseChatModel):
                             "asset_location": "Manchester",
                         },
                         "id": "stub-change-location-eq10",
-                        "type": "tool call"
+                        "type": "tool_call"
                     }
                 ],
             )
@@ -182,12 +182,13 @@ class DeterministicStubLLM(BaseChatModel):
                 content="",
                 tool_calls=[
                     {
-                        "name": "log_asset_fault",
+                        "name": "write_asset_fault_log",
                         "args": {
                             "asset_id": "EQ10",
-                            "asset_fault": "low power",
+                            "asset_fault": "low power output",
                         },
                         "id": "stub-change-location-eq10",
+                        "type": "tool_call"
                     }
                 ],
             )
@@ -242,10 +243,10 @@ def get_llm():
 # ================================
 # AGENT SETUP
 # ================================
-tools = [change_asset_status, change_asset_location, log_asset_fault, get_asset_fault_history, get_asset]
+tools = [change_asset_status, change_asset_location, write_asset_fault_log, get_asset_fault_history, get_asset]
 
 def agent_create(system_prompt, model=get_llm()):
-    # tools = [change_asset_status, change_asset_location, log_asset_fault, get_asset_fault_history, get_asset]
+    # tools = [change_asset_status, change_asset_location, write_asset_fault_log, get_asset_fault_history, get_asset]
 
     agent_chain = create_agent(
         model=model,

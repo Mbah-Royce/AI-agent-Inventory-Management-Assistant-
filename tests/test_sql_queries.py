@@ -77,6 +77,5 @@ def test_log_asset_fault(db):
     result = log_asset_fault(db, "EQ10", "Broken belt",)
 
     db.close()
-
     assert type(result) == int
     assert result != 0
