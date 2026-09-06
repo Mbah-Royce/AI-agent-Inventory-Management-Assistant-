@@ -144,6 +144,22 @@ class DeterministicStubLLM(BaseChatModel):
                     ChatGeneration(message=response)
                 ]
             )
+        elif "change" in prompt and "status" in prompt and "de10" in prompt:
+
+            response = AIMessage(
+                content="yes",
+                tool_calls=[
+                    {
+                        "name": "change_asset_status",
+                        "args": {
+                            "asset_id": "DE10",
+                            "asset_status": "Out of Service",
+                        },
+                        "id": "stub-change-status-eq10",
+                        "type": "tool_call",
+                    }
+                ],
+            )
         elif "change" in prompt and "status" in prompt:
 
             response = AIMessage(
