@@ -17,4 +17,4 @@ The main branch represents the version of the project submitted for the assessme
 
 After the submission, I continued working on the project in the update branch, where I have implemented further improvements, testing, refinements, and additional functionality.
 
-I have kept this work separate from main so that the original assessment submission remains identifiable. If you would like to see the subsequent development and improvements, please feel free to review the update branch.
+I have kept this work separate from main so that the original assessment submission remains identifiable. If you would like to see the subsequent development and improvements, please feel free to review the "main-update" branch.
